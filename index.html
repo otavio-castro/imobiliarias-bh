@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imobiliárias de Belo Horizonte | Trabalho de Business Intelligence</title>
+<meta name="description" content="Trabalho prático de Business Intelligence da PUC Minas: mapa geográfico no ArcGIS e painel no Power BI sobre 20 imobiliárias de Belo Horizonte.">
+<link rel="icon" href="img/brasao-puc-minas.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0A3761; --azul:#005380; --ouro:#F4A203; --ceu:#22B8E6;
+  --papel:#F3F6F9; --tinta:#1B2A3A; --cinza:#55636F; --linha:#D3DEE7;
+  --largura:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--papel);color:var(--tinta);font:400 1.0625rem/1.6 "Source Sans 3",system-ui,sans-serif}
+h1,h2,h3{font-family:Montserrat,system-ui,sans-serif;line-height:1.15;margin:0;color:var(--navy)}
+h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.15rem;font-weight:700}
+p{margin:0 0 1em;max-width:68ch}
+a{color:var(--azul)}
+a:focus-visible,button:focus-visible{outline:3px solid var(--ouro);outline-offset:3px;border-radius:4px}
+.miolo{max-width:var(--largura);margin:0 auto;padding:0 24px}
+
+.topo{background:#fff;border-bottom:4px solid var(--ouro)}
+.topo .miolo{display:flex;align-items:center;gap:20px;min-height:76px;flex-wrap:wrap}
+.topo img{height:56px;width:auto}
+.topo .curso{font:600 .95rem/1.3 "Source Sans 3",sans-serif;color:var(--cinza)}
+.topo nav{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.topo nav a{font:700 .85rem Montserrat,sans-serif;color:var(--navy);text-decoration:none;padding:8px 12px;border-radius:6px}
+.topo nav a:hover{background:var(--papel)}
+
+.abertura{background:var(--navy);color:#fff;overflow:hidden}
+.abertura .miolo{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:40px;align-items:center;padding-top:56px;padding-bottom:56px}
+.abertura h1{color:#fff;font-size:clamp(2.4rem,5.4vw,4.3rem);font-weight:800;letter-spacing:-.02em}
+.abertura .linha-ouro{display:block;width:72px;height:6px;background:var(--ouro);margin:22px 0}
+.abertura p{color:#D6E4F0;font-size:1.15rem}
+.abertura .numeros{display:flex;gap:28px;margin:26px 0 0;padding:0;list-style:none;flex-wrap:wrap}
+.abertura .numeros li{font-size:.95rem;color:#BFD3E4}
+.abertura .numeros strong{display:block;font:800 1.7rem Montserrat,sans-serif;color:#fff}
+.mapa-pontos{background:#fff;border-radius:14px;padding:8px;box-shadow:0 0 0 4px rgba(244,162,3,.9)}
+.mapa-pontos svg{display:block;width:100%;height:auto;border-radius:8px}
+.mapa-pontos figcaption{font-size:.85rem;color:var(--cinza);padding:8px 6px 4px}
+.legenda{display:flex;flex-wrap:wrap;gap:4px 14px;margin-bottom:4px;color:var(--tinta);font-weight:600}
+.legenda i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.ponto{transition:opacity .2s}
+.mapa-pontos svg:hover .ponto{opacity:.35}
+.mapa-pontos svg .ponto:hover{opacity:1}
+
+section{padding:72px 0}
+section+section{border-top:1px solid var(--linha)}
+.cabeca{margin-bottom:28px}
+.cabeca p{color:var(--cinza);margin-top:10px}
+.duas{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:48px}
+.equipe{background:#fff;border-left:6px solid var(--ouro);border-radius:0 10px 10px 0;padding:24px 28px}
+.equipe ul{list-style:none;margin:14px 0 0;padding:0}
+.equipe li{font:600 1.05rem/1.3 "Source Sans 3",sans-serif;padding:9px 0;border-bottom:1px solid var(--linha)}
+.equipe li:last-child{border-bottom:0}
+
+.quadro{background:#fff;border:1px solid var(--linha);border-radius:12px;overflow:hidden}
+.quadro iframe{display:block;width:100%;border:0}
+.mapa-quadro iframe{height:560px}
+.painel-quadro iframe{aspect-ratio:16/9.6;height:auto}
+.acoes{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.botao{display:inline-block;font:700 .95rem Montserrat,sans-serif;text-decoration:none;padding:12px 20px;border-radius:8px;background:var(--azul);color:#fff}
+.botao:hover{background:var(--navy)}
+.botao.claro{background:#fff;color:var(--navy);border:2px solid var(--navy)}
+.nota{padding:18px 22px;border-bottom:1px solid var(--linha);background:#F7FAFC}
+.nota p{margin:0;max-width:none}
+
+.galeria{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;padding:12px;border-top:1px solid var(--linha)}
+.galeria button{all:unset;cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid transparent;display:block}
+.galeria button[aria-pressed=true]{border-color:var(--ouro)}
+.galeria img{display:block;width:100%;height:auto}
+.galeria span{display:block;font:600 .8rem/1.2 "Source Sans 3",sans-serif;padding:6px 4px;color:var(--navy);text-align:center}
+.vitrine{display:block;width:100%;height:auto}
+
+.etapas{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;counter-reset:etapa}
+.etapas li{position:relative;padding:20px 18px 20px 0;border-top:6px solid var(--azul);counter-increment:etapa}
+.etapas li:nth-child(1){border-color:#8BB4CF}
+.etapas li:nth-child(2){border-color:var(--ceu)}
+.etapas li:nth-child(4){border-color:var(--navy)}
+.etapas li:nth-child(5){border-color:var(--ouro)}
+.etapas li::before{content:counter(etapa);font:800 2rem Montserrat,sans-serif;color:var(--linha);display:block;margin-bottom:6px}
+.etapas h3{font-size:1.02rem;margin-bottom:6px}
+.etapas p{font-size:.95rem;color:var(--cinza);margin:0}
+.estrela{margin-top:36px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+.estrela table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:.98rem}
+.estrela th,.estrela td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--linha);vertical-align:top}
+.estrela th{background:var(--navy);color:#fff;font:700 .9rem Montserrat,sans-serif}
+.estrela tr.fato td:first-child{border-left:5px solid var(--ouro)}
+.estrela tr.dim td:first-child{border-left:5px solid var(--azul)}
+
+footer{background:var(--navy);color:#BFD3E4;padding:28px 0;font-size:.95rem}
+footer p{margin:0;max-width:none}
+
+@media (max-width:900px){
+  .abertura .miolo,.duas,.estrela{grid-template-columns:1fr}
+  .etapas{grid-template-columns:1fr 1fr}
+  .galeria{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .mapa-quadro iframe{height:460px}
+  .topo nav{margin-left:0}
+}
+@media (max-width:520px){
+  .etapas{grid-template-columns:1fr}
+  .galeria{grid-template-columns:repeat(2,minmax(0,1fr))}
+  section{padding:52px 0}
+  .topo .miolo{gap:10px 14px;padding-top:10px;padding-bottom:6px}
+  .topo img{height:44px}
+  .topo .curso{font-size:.85rem}
+  .topo nav{width:100%;gap:2px}
+  .topo nav a{padding:6px 8px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.ponto{transition:none}}
+</style>
+</head>
+<body>
+<header class="topo">
+  <div class="miolo">
+    <img src="img/brasao-puc-minas.png" alt="Brasão da PUC Minas" width="146" height="120">
+    <div class="curso">Sistemas de Informação, PUC Minas<br>Trabalho prático de Business Intelligence</div>
+    <nav aria-label="Seções">
+      <a href="#trabalho">O trabalho</a>
+      <a href="#mapa">Mapa</a>
+      <a href="#painel">Painel</a>
+      <a href="#como">Como fizemos</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<div class="abertura">
+  <div class="miolo">
+    <div>
+      <h1>Imobiliárias de Belo Horizonte</h1>
+      <span class="linha-ouro" aria-hidden="true"></span>
+      <p>Onde estão, quanto anunciam e a que preço. Os mesmos 20 pontos aparecem em um mapa geográfico no ArcGIS e em um painel no Power BI.</p>
+      <ul class="numeros">
+        <li><strong>20</strong>imobiliárias</li>
+        <li><strong>12</strong>bairros</li>
+        <li><strong>3</strong>tipos de serviço</li>
+      </ul>
+    </div>
+    <figure class="mapa-pontos" style="margin:0">
+      <svg viewBox="0 0 1280 920" role="img" aria-labelledby="t-mapa"><title id="t-mapa">Mapa de Belo Horizonte com as 20 imobiliárias</title><image href="img/mapa-bh.webp" x="0" y="0" width="1280" height="920"/><circle class="ponto" cx="650.6" cy="382.1" r="46.0" fill="#00808C" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Prolar Netimóveis. Floresta (Leste): 8,000 imóveis anunciados</title></circle><circle class="ponto" cx="740.1" cy="724.7" r="32.0" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Anuar Donato Consultoria Imobiliária. Mangabeiras (Centro-Sul): 3,000 imóveis anunciados</title></circle><circle class="ponto" cx="602.1" cy="532.7" r="30.1" fill="#F4A203" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Casa Mineira por QuintoAndar. Centro (Centro): 2,500 imóveis anunciados</title></circle><circle class="ponto" cx="524.2" cy="618.1" r="30.1" fill="#B5323E" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>LAR Imóveis. Lourdes (Diversas regiões): 2,500 imóveis anunciados</title></circle><circle class="ponto" cx="624.8" cy="770.6" r="28.0" fill="#B5323E" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Mirian Dayrell Imóveis. Belo Horizonte (Diversas regiões): 2,000 imóveis anunciados</title></circle><circle class="ponto" cx="711.1" cy="536.0" r="25.6" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>GPO Netimóveis. Funcionários (Centro-Sul): 1,500 imóveis anunciados</title></circle><circle class="ponto" cx="661.9" cy="800.5" r="24.4" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Valore Imóveis. Sion (Centro-Sul): 1,276 imóveis anunciados</title></circle><circle class="ponto" cx="666.8" cy="644.6" r="23.9" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Ximenes Netimóveis. Funcionários (Centro-Sul): 1,200 imóveis anunciados</title></circle><circle class="ponto" cx="852.9" cy="119.3" r="23.9" fill="#00808C" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Cia do Imóvel Netimóveis. Santa Inês (Leste): 1,200 imóveis anunciados</title></circle><circle class="ponto" cx="510.8" cy="529.8" r="23.9" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Santo Agostinho Imóveis. Santo Agostinho (Centro-Sul): 1,200 imóveis anunciados</title></circle><circle class="ponto" cx="713.3" cy="588.6" r="23.3" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Decisão Imóveis. Funcionários (Centro-Sul): 1,100 imóveis anunciados</title></circle><circle class="ponto" cx="663.0" cy="615.2" r="22.7" fill="#B5323E" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Anil Netimóveis. Funcionários (Diversas regiões): 1,000 imóveis anunciados</title></circle><circle class="ponto" cx="595.6" cy="640.2" r="22.1" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Comiteco Netimóveis, Funcionários (Centro-Sul): 900 imóveis anunciados</title></circle><circle class="ponto" cx="664.7" cy="800.7" r="22.1" fill="#B5323E" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Colonial Netimóveis, Sion (Diversas regiões): 900 imóveis anunciados</title></circle><circle class="ponto" cx="619.5" cy="562.4" r="22.1" fill="#B5323E" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Luiz Renato Imóveis, Funcionários (Diversas regiões): 900 imóveis anunciados</title></circle><circle class="ponto" cx="711.8" cy="345.7" r="21.4" fill="#005380" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Utilbrá Imobiliária, Sagrada Família (Belo Horizonte): 800 imóveis anunciados</title></circle><circle class="ponto" cx="638.3" cy="578.5" r="20.6" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Luiz Vieira Netimóveis, Savassi (Centro-Sul): 700 imóveis anunciados</title></circle><circle class="ponto" cx="550.3" cy="468.0" r="20.6" fill="#22B8E6" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Casa Onze Imóveis, Centro (Centro-Sul): 700 imóveis anunciados</title></circle><circle class="ponto" cx="427.1" cy="621.9" r="20.6" fill="#B5323E" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>RE/MAX Class, Gutierrez (Diversas regiões): 700 imóveis anunciados</title></circle><circle class="ponto" cx="569.4" cy="510.9" r="19.0" fill="#F4A203" fill-opacity=".85" stroke="#FFFFFF" stroke-width="3"><title>Pontes Mol Netimóveis, Centro (Centro): 500 imóveis anunciados</title></circle></svg>
+      <figcaption><div class="legenda"><span><i style="background:#005380"></i>Belo Horizonte</span><span><i style="background:#F4A203"></i>Centro</span><span><i style="background:#22B8E6"></i>Centro-Sul</span><span><i style="background:#B5323E"></i>Diversas regiões</span><span><i style="background:#00808C"></i>Leste</span></div>Cada círculo é uma imobiliária. O tamanho mostra os imóveis anunciados e a cor, a região. Mapa base: Esri World Street Map.</figcaption>
+    </figure>
+  </div>
+</div>
+
+<section id="trabalho">
+  <div class="miolo duas">
+    <div>
+      <div class="cabeca">
+        <h2>O trabalho</h2>
+      </div>
+      <p><strong>Tema:</strong> imobiliárias de Belo Horizonte, organizadas por região e bairro.</p>
+      <p>No início do semestre o grupo levantou 20 imobiliárias da cidade, com endereço, localização, bairro, região, tipo de serviço, avaliação no Google, funcionários, tempo de mercado, tipos de imóvel, faixas de atendimento, imóveis anunciados e preços médios. Com esses dados montamos um mapa de indicadores geográficos no ArcGIS.</p>
+      <p>Nesta etapa os mesmos dados viraram um painel no Power BI. A planilha foi tratada e organizada em um modelo estrela (data warehouse), dividido em dois data marts: oferta e preços, e estrutura e reputação.</p>
+    </div>
+    <aside class="equipe" aria-labelledby="titulo-equipe">
+      <h3 id="titulo-equipe">Alunos</h3>
+      <ul>
+        <li>Gustavo Rodrigues de Almeida</li>
+        <li>Moisés Samuel Rezende Maia</li>
+        <li>Otávio Nascimento de Castro</li>
+        <li>Sarah Palhares Araújo</li>
+      </ul>
+    </aside>
+  </div>
+</section>
+
+<section id="mapa">
+  <div class="miolo">
+    <div class="cabeca">
+      <h2>Mapa geográfico no ArcGIS</h2>
+      <p>O app feito no início do semestre. Ele tem três camadas: anúncios e preço de venda, preço de venda e tempo de mercado, e região e funcionários.</p>
+    </div>
+    <div class="quadro mapa-quadro">
+      <iframe src="https://www.arcgis.com/apps/instant/exhibit/index.html?appid=c58d55c94c1044a6ac141f61df2d5a09" title="App do mapa das imobiliárias de Belo Horizonte no ArcGIS" loading="lazy" allowfullscreen></iframe>
+    </div>
+    <div class="acoes">
+      <a class="botao" href="https://www.arcgis.com/apps/instant/exhibit/index.html?appid=c58d55c94c1044a6ac141f61df2d5a09" target="_blank" rel="noopener">Abrir o app do mapa</a>
+      <a class="botao claro" href="https://www.arcgis.com/apps/mapviewer/index.html?webmap=6c1fb05832bc45f1b070028ccfbe1026" target="_blank" rel="noopener">Abrir o mapa no Map Viewer</a>
+    </div>
+  </div>
+</section>
+
+<section id="painel">
+  <div class="miolo">
+    <div class="cabeca">
+      <h2>Painel no Power BI</h2>
+      <p>Cinco páginas com os mesmos dados do mapa: visão geral, oferta e preços, estrutura, mapa e o desenho do data warehouse. São 9 gráficos, um mapa e uma tabela, com filtros por região, bairro e tipo de serviço.</p>
+    </div>
+    <div class="quadro painel-quadro" id="painel-quadro">
+      <div class="nota"><p>A conta da PUC Minas não permite gerar o link público do Power BI (Publicar na Web), então as páginas aparecem aqui como imagens. Para usar os filtros, baixe o arquivo e abra no Power BI Desktop, ou abra o painel no Power BI com login da PUC.</p></div><img class="vitrine" id="vitrine" src="img/painel-visao-geral.webp" alt="Página Visão Geral do painel" width="1600" height="900"><div class="galeria" role="group" aria-label="Páginas do painel"><button type="button" data-img="img/painel-visao-geral.webp" data-alt="Página Visão Geral do painel" aria-pressed="true"><img src="img/painel-visao-geral.webp" alt="" loading="lazy" width="1600" height="900"><span>Visão Geral</span></button><button type="button" data-img="img/painel-oferta-precos.webp" data-alt="Página Oferta e Preços do painel" aria-pressed="false"><img src="img/painel-oferta-precos.webp" alt="" loading="lazy" width="1600" height="900"><span>Oferta e Preços</span></button><button type="button" data-img="img/painel-estrutura.webp" data-alt="Página Estrutura do painel" aria-pressed="false"><img src="img/painel-estrutura.webp" alt="" loading="lazy" width="1600" height="900"><span>Estrutura</span></button><button type="button" data-img="img/painel-mapa.webp" data-alt="Página Mapa do painel" aria-pressed="false"><img src="img/painel-mapa.webp" alt="" loading="lazy" width="1600" height="900"><span>Mapa</span></button><button type="button" data-img="img/painel-dw-dm.webp" data-alt="Página DW e DM do painel" aria-pressed="false"><img src="img/painel-dw-dm.webp" alt="" loading="lazy" width="1600" height="900"><span>DW e DM</span></button></div>
+    </div>
+    <div class="acoes"><a class="botao" href="ImobiliariasBH.pbix" download>Baixar o painel (.pbix)</a><a class="botao claro" href="https://app.powerbi.com/groups/me/reports/ae033d18-1f25-4cbc-9fdf-c17127e4ce00?ctid=5e2a8164-87b6-430b-ac6b-08d6229e7059&amp;pbi_source=linkShare" target="_blank" rel="noopener">Abrir no Power BI (login PUC)</a></div>
+  </div>
+</section>
+
+<section id="como">
+  <div class="miolo">
+    <div class="cabeca">
+      <h2>Como fizemos</h2>
+      <p>O caminho da planilha até o painel.</p>
+    </div>
+    <ol class="etapas">
+      <li><h3>Planilha</h3><p>CSV com as 20 imobiliárias, o mesmo usado nas camadas do mapa.</p></li>
+      <li><h3>Tratamento</h3><p>No Power Query: tipos de dado, acentos e chaves substitutas (SK).</p></li>
+      <li><h3>Data warehouse</h3><p>Modelo estrela com uma tabela fato e três dimensões.</p></li>
+      <li><h3>Data marts</h3><p>Oferta e preços; estrutura e reputação. Cada um com suas medidas em DAX.</p></li>
+      <li><h3>Painel</h3><p>Gráficos, filtros e mapa, com a identidade visual da PUC Minas.</p></li>
+    </ol>
+    <div class="estrela">
+      <table>
+        <caption style="text-align:left;padding:0 0 10px;font:700 1rem Montserrat,sans-serif;color:var(--navy)">Tabelas do modelo estrela</caption>
+        <thead><tr><th>Tabela</th><th>O que guarda</th></tr></thead>
+        <tbody>
+          <tr class="fato"><td>Fato Imobiliárias</td><td>Os números: imóveis anunciados, preços de venda e aluguel, funcionários, tempo de mercado e avaliação</td></tr>
+          <tr class="dim"><td>Dim Imobiliária</td><td>Quem é: nome, tipos de imóvel, faixas de atendimento e faixa de tempo de mercado</td></tr>
+          <tr class="dim"><td>Dim Localização</td><td>Onde fica: região, bairro, endereço e coordenadas</td></tr>
+          <tr class="dim"><td>Dim Serviço</td><td>O que faz: compra, venda, locação, loteamento e avaliação</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <caption style="text-align:left;padding:0 0 10px;font:700 1rem Montserrat,sans-serif;color:var(--navy)">Data marts e medidas</caption>
+        <thead><tr><th>Data mart</th><th>Medidas</th></tr></thead>
+        <tbody>
+          <tr><td>Oferta e Preços</td><td>Qtd Imobiliárias, Total de Anúncios, Participação nos Anúncios (%), Preço Médio de Venda, Preço Médio de Aluguel</td></tr>
+          <tr><td>Estrutura e Reputação</td><td>Total de Funcionários, Anúncios por Funcionário, Tempo Médio de Mercado (anos), Avaliação Média no Google</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="miolo">
+    <p>Trabalho prático de Business Intelligence, PUC Minas, 2026. Dados do mapa Mapa_Imobiliarias_BH_Regiao no ArcGIS Online.</p>
+  </div>
+</footer>
+<script>
+document.querySelectorAll('.galeria button').forEach(function(b){
+  b.addEventListener('click',function(){
+    var v=document.getElementById('vitrine');v.src=b.dataset.img;v.alt=b.dataset.alt;
+    document.querySelectorAll('.galeria button').forEach(function(o){o.setAttribute('aria-pressed',o===b?'true':'false')});
+  });
+});
+</script>
+</body>
+</html>
